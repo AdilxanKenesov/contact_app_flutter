@@ -1,0 +1,5 @@
+package uz.gita.mycontact
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
