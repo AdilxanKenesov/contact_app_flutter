@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mycontact/data/model/contact.dart';
+import 'package:mycontact/data/repository/auth_repository_impl.dart';
+import 'package:mycontact/data/repository/contact_repository_impl.dart';
 import 'package:mycontact/presentation/screens/dialogs/delete_dialog.dart';
 import 'package:mycontact/presentation/screens/dialogs/logout_dialog.dart';
 import 'package:mycontact/presentation/screens/home/add_contact_screen.dart';
@@ -14,19 +18,50 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final authRepository = AuthRepositoryImpl();
+  final contactRepository = ContactRepositoryImpl();
   List<Contact> contacts = [];
+  StreamSubscription<List<Contact>>? subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    subscription = contactRepository.getContacts().listen(
+      (list) => setState(() => contacts = list),
+      onError: (error) {},
+    );
+  }
+
+  @override
+  void dispose() {
+    subscription?.cancel();
+    super.dispose();
+  }
 
   void openLogoutDialog() {
     showDialog(
       context: context,
       builder: (_) => LogoutDialog(
-        onLogout: goToLogin,
-        onUnregister: goToLogin,
+        onLogout: () async {
+          await subscription?.cancel();
+          await authRepository.logout();
+          goToLogin();
+        },
+        onUnregister: () async {
+          await subscription?.cancel();
+          try {
+            await authRepository.deleteAccount();
+          } catch (e) {
+            await authRepository.logout();
+          }
+          goToLogin();
+        },
       ),
     );
   }
 
   void goToLogin() {
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -34,13 +69,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void openDeleteDialog(Contact contact) {
-    showDialog(
+  Future<bool> confirmDelete(Contact contact) async {
+    var deleted = false;
+    await showDialog(
       context: context,
       builder: (_) => DeleteDialog(
         name: contact.name,
-        onDelete: () => setState(() => contacts.remove(contact)),
+        onDelete: () {
+          deleted = true;
+        },
       ),
+    );
+    return deleted;
+  }
+
+  void openUpdate(Contact contact) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => UpdateContactScreen(contact: contact)),
     );
   }
 
@@ -103,6 +149,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget contactItem(Contact contact) {
+    return Dismissible(
+      key: ValueKey(contact.id),
+      background: swipeBackground(
+        color: const Color(0xFF8E8E93),
+        icon: Icons.edit,
+        alignment: Alignment.centerLeft,
+      ),
+      secondaryBackground: swipeBackground(
+        color: const Color(0xFFEB5757),
+        icon: Icons.delete,
+        alignment: Alignment.centerRight,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          openUpdate(contact);
+          return false;
+        }
+        return confirmDelete(contact);
+      },
+      onDismissed: (direction) {
+        setState(() => contacts.remove(contact));
+        contactRepository.deleteContact(contact.id);
+      },
+      child: ColoredBox(color: Colors.white, child: contactRow(contact)),
+    );
+  }
+
+  Widget swipeBackground({
+    required Color color,
+    required IconData icon,
+    required Alignment alignment,
+  }) {
+    return Container(
+      color: color,
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Icon(icon, color: Colors.white),
+    );
+  }
+
+  Widget contactRow(Contact contact) {
     return Column(
       children: [
         SizedBox(
@@ -146,14 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               PopupMenuButton<String>(
                 color: Colors.white,
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'update') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => UpdateContactScreen(contact: contact)),
-                    );
-                  } else {
-                    openDeleteDialog(contact);
+                    openUpdate(contact);
+                  } else if (await confirmDelete(contact)) {
+                    await contactRepository.deleteContact(contact.id);
                   }
                 },
                 itemBuilder: (context) => const [

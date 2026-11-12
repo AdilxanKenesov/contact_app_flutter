@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mycontact/data/repository/auth_repository_impl.dart';
+import 'package:mycontact/presentation/screens/home/home_screen.dart';
 import 'package:mycontact/presentation/screens/login/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -19,9 +21,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
+      final isLoggedIn = AuthRepositoryImpl().isLoggedIn();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(
+          builder: (_) => isLoggedIn ? const HomeScreen() : const LoginScreen(),
+        ),
       );
     });
   }

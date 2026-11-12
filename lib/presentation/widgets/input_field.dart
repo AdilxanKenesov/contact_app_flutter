@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:mycontact/utils/phone_formatter.dart';
 
 class InputField extends StatefulWidget {
   final String hint;
   final TextEditingController controller;
   final bool isPassword;
-  final TextInputType keyboardType;
+  final bool isPhone;
 
   const InputField({
     super.key,
     required this.hint,
     required this.controller,
     this.isPassword = false,
-    this.keyboardType = TextInputType.text,
+    this.isPhone = false,
   });
 
   @override
@@ -41,7 +42,8 @@ class _InputFieldState extends State<InputField> {
             child: TextField(
               controller: widget.controller,
               obscureText: widget.isPassword && hidden,
-              keyboardType: widget.keyboardType,
+              keyboardType: widget.isPhone ? TextInputType.phone : TextInputType.text,
+              inputFormatters: widget.isPhone ? [PhoneFormatter()] : null,
               style: const TextStyle(fontSize: 16, color: Color(0xFF8E8E93)),
               decoration: InputDecoration(
                 hintText: widget.hint,
@@ -57,7 +59,7 @@ class _InputFieldState extends State<InputField> {
               if (widget.isPassword) {
                 setState(() => hidden = !hidden);
               } else {
-                widget.controller.clear();
+                widget.controller.text = widget.isPhone ? PhoneFormatter.prefix : '';
               }
             },
             child: widget.isPassword

@@ -1,41 +1,42 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mycontact/data/model/contact.dart';
 import 'package:mycontact/data/repository/contact_repository.dart';
-import 'package:mycontact/data/stroge/shared_manager.dart';
 
 class ContactRepositoryImpl implements ContactRepository {
-  final _shared = SharedManager.instance;
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
 
-  String get _username => _shared.getCurrentUsername() ?? '';
+  CollectionReference<Map<String, dynamic>> get _contacts {
+    return _firestore
+        .collection('users')
+        .doc(_auth.currentUser!.uid)
+        .collection('contacts');
+  }
 
   @override
-  List<Contact> getContacts() {
-    return _shared.getContacts(_username);
+  Stream<List<Contact>> getContacts() {
+    return _contacts.orderBy('createdAt').snapshots().map(
+          (snapshot) => snapshot.docs.map((e) => Contact.fromJson(e.id, e.data())).toList(),
+        );
   }
 
   @override
   Future<void> addContact(String name, String phone) async {
-    final contacts = getContacts();
-    contacts.add(Contact(
-      id: DateTime.now().millisecondsSinceEpoch,
-      name: name,
-      phone: phone,
-    ));
-    await _shared.saveContacts(_username, contacts);
+    await _contacts.add({
+      'name': name,
+      'phone': phone,
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+    });
   }
 
   @override
   Future<void> updateContact(Contact contact) async {
-    final contacts = getContacts();
-    final index = contacts.indexWhere((e) => e.id == contact.id);
-    if (index == -1) return;
-    contacts[index] = contact;
-    await _shared.saveContacts(_username, contacts);
+    await _contacts.doc(contact.id).update(contact.toJson());
   }
 
   @override
-  Future<void> deleteContact(int id) async {
-    final contacts = getContacts();
-    contacts.removeWhere((e) => e.id == id);
-    await _shared.saveContacts(_username, contacts);
+  Future<void> deleteContact(String id) async {
+    await _contacts.doc(id).delete();
   }
 }
