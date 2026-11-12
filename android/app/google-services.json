@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1030557856000",
+    "project_id": "contact-app-24d36",
+    "storage_bucket": "contact-app-24d36.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1030557856000:android:11848b5d0b6e64d3cbc3e5",
+        "android_client_info": {
+          "package_name": "uz.gita.mycontact"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhB6Qvi-0ijAKKjk2DeYo0bq2MhCFJgWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,24 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "contact-app-24d36",
+          "appId": "1:1030557856000:android:11848b5d0b6e64d3cbc3e5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "contact-app-24d36",
+          "configurations": {
+            "android": "1:1030557856000:android:11848b5d0b6e64d3cbc3e5"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
